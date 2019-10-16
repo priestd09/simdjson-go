@@ -2,6 +2,7 @@ package simdjson
 
 import (
 	"fmt"
+	"sync"
 	"testing"
 )
 
@@ -80,6 +81,9 @@ func benchmarkStage2Dev(b *testing.B, filename string) {
 	pj := internalParsedJson{}
 	pj.initialize(len(msg)*2)
 
+	pj2 := internalParsedJson{}
+	pj2.initialize(len(msg)*2)
+
 	find_structural_indices(msg, &pj)
 
 	// buf := make([]byte, len(pj.masks)*8)
@@ -89,9 +93,25 @@ func benchmarkStage2Dev(b *testing.B, filename string) {
 	// ioutil.WriteFile(filename+".masks", []byte(buf), 0666)
 
 	for i := 0; i < b.N; i++ {
-		pj.Tape = pj.Tape[:0]
-		pj.Strings = pj.Strings[:0]
-		unified_machine(msg, &pj)
+
+		var wg sync.WaitGroup
+		wg.Add(2)
+
+		go func() {
+			pj2.structural_indexes = pj2.structural_indexes[:0]
+			pj2.masks = pj2.masks[:0]
+			find_structural_indices(msg, &pj2)
+			wg.Done()
+		}()
+
+		go func() {
+			pj.Tape = pj.Tape[:0]
+			pj.Strings = pj.Strings[:0]
+			unified_machine(msg, &pj)
+			wg.Done()
+		}()
+
+		wg.Wait()
 	}
 }
 
