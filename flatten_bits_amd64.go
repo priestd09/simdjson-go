@@ -23,3 +23,9 @@ func flatten_bits(base *[]uint32, idx uint64, bits uint64) {
 	}
 	sh.Len = int(size)
 }
+
+func flatten_bits2(base *[64]uint32, idx uint64, bits uint64) (size uint32) {
+
+	_flatten_bits(unsafe.Pointer(&(*base)[0]), unsafe.Pointer(&size), idx, bits)
+	return
+}

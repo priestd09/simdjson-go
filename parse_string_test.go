@@ -51,6 +51,19 @@ func TestParseString(t *testing.T) {
 	}
 }
 
+func TestParseSmallStrings(t *testing.T) {
+
+	stringbuf := make([]byte, 0, 32)
+
+	parse_string_simd([]byte(fmt.Sprintf(`"%s"`, "a")), &stringbuf)
+	parse_string_simd([]byte(fmt.Sprintf(`"%s"`, "b")), &stringbuf)
+	parse_string_simd([]byte(fmt.Sprintf(`"%s"`, "c")), &stringbuf)
+	parse_string_simd([]byte(fmt.Sprintf(`"%s"`, "d")), &stringbuf)
+	parse_string_simd([]byte(fmt.Sprintf(`"%s"`, "e")), &stringbuf)
+	// parse_string_simd([]byte(fmt.Sprintf(`"%s"`, "f")), &stringbuf)
+	fmt.Println(len(stringbuf))
+}
+
 func benchmarkParseString(b *testing.B, str string) {
 
 	// Add beginning and closing double-quote

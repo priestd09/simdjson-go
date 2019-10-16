@@ -23,6 +23,7 @@ type internalParsedJson struct {
 	structural_indexes      []uint32
 	containing_scope_offset []uint64
 	isvalid                 bool
+	masks				    []uint64
 }
 
 func (pj *internalParsedJson) initialize(size int) {
@@ -31,8 +32,8 @@ func (pj *internalParsedJson) initialize(size int) {
 	pj.Strings = make([]byte, 0, size)
 	pj.structural_indexes = make([]uint32, 0, size)
 
-	// combine into single struct (array)
 	pj.containing_scope_offset = make([]uint64, 0, DEFAULTMAXDEPTH)
+	pj.masks = make([]uint64, 0, (size+63) >> 6)
 }
 
 // Iter returns a new Iter

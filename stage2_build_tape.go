@@ -10,8 +10,33 @@ const RET_ADDRESS_START_CONST = 1
 const RET_ADDRESS_OBJECT_CONST = 2
 const RET_ADDRESS_ARRAY_CONST = 3
 
-func UPDATE_CHAR(buf []byte, pj *internalParsedJson, i_in uint32) (i uint32, idx uint32, c byte) {
-	idx = pj.structural_indexes[i_in]
+//func UPDATE_CHAR(buf []byte, pj *internalParsedJson, i_in uint32) (i uint32, idx uint32, c byte) {
+//	idx = pj.structural_indexes[i_in]
+//	i = i_in + 1
+//	c = buf[idx]
+//	return
+//}
+
+// TODO: Change uint32 to uint64
+func UPDATE_CHAR_V3(buf []byte, pj *internalParsedJson, i_in uint32, indexes *[64]uint32, maskIndex *int, indicesLen *uint32) (done bool, i uint32, idx uint32, c byte) {
+	if uint32(i_in) >= *indicesLen /*len(*indexes)*/ {
+		for {
+			//*indexes = (*indexes)[:0]
+			if *maskIndex >= len(pj.masks) {
+				done = true
+				return
+			}
+			// fmt.Printf("flatten_bits: 0b%b\n", pj.masks[*maskIndex])
+			//flatten_bits(indexes, 64 + uint64((*maskIndex)*64), pj.masks[*maskIndex])
+			*indicesLen = flatten_bits2(indexes, 64 + uint64((*maskIndex)*64), pj.masks[*maskIndex])
+			*maskIndex += 1
+			i_in = 0
+			if *indicesLen /*len(*indexes)*/ > 0 {
+				break
+			}
+		}
+	}
+	idx = (*indexes)[i_in]
 	i = i_in + 1
 	c = buf[idx]
 	return
@@ -70,10 +95,15 @@ func unified_machine(buf []byte, pj *internalParsedJson) bool {
 		pj.structural_indexes = pj.structural_indexes[:len(pj.structural_indexes)-1]
 	}
 
+	var done bool
 	i := uint32(0)      // index of the structural character (0,1,2,3...)
 	idx := uint32(0)    // location of the structural character in the input (buf)
 	c := byte(0)        // used to track the (structural) character we are looking at
 	offset := uint64(0) // used to contain last element of containing_scope_offset
+
+	indexes := [64]uint32{} // make([]uint32, 0, 64)
+	maskIndex := 0
+	indicesLen := uint32(0)
 
 	//pj.init();
 
@@ -87,7 +117,9 @@ func unified_machine(buf []byte, pj *internalParsedJson) bool {
 	pj.write_tape(0, 'r') // r for root, 0 is going to get overwritten
 	// the root is used, if nothing else, to capture the size of the tape
 
-	i, idx, c = UPDATE_CHAR(buf, pj, i)
+	if done, i, idx, c = UPDATE_CHAR_V3(buf, pj, i, &indexes, &maskIndex, &indicesLen); done {
+		goto succeed
+	}
 	switch c {
 	case '{':
 		pj.containing_scope_offset = append(pj.containing_scope_offset, (pj.get_current_loc()<<RET_ADDRESS_SHIFT)|RET_ADDRESS_START_CONST)
@@ -220,7 +252,9 @@ start_continue:
 	//////////////////////////////// OBJECT STATES /////////////////////////////
 
 object_begin:
-	i, idx, c = UPDATE_CHAR(buf, pj, i)
+	if done, i, idx, c = UPDATE_CHAR_V3(buf, pj, i, &indexes, &maskIndex, &indicesLen); done {
+		goto succeed
+	}
 	switch c {
 	case '"':
 		if !parse_string(buf, &pj.ParsedJson, len(pj.containing_scope_offset), idx) {
@@ -234,11 +268,15 @@ object_begin:
 	}
 
 object_key_state:
-	i, idx, c = UPDATE_CHAR(buf, pj, i)
+	if done, i, idx, c = UPDATE_CHAR_V3(buf, pj, i, &indexes, &maskIndex, &indicesLen); done {
+		goto succeed
+	}
 	if c != ':' {
 		goto fail
 	}
-	i, idx, c = UPDATE_CHAR(buf, pj, i)
+	if done, i, idx, c = UPDATE_CHAR_V3(buf, pj, i, &indexes, &maskIndex, &indicesLen); done {
+		goto succeed
+	}
 	switch c {
 	case '"':
 		if !parse_string(buf, &pj.ParsedJson, len(pj.containing_scope_offset), idx) {
@@ -290,10 +328,14 @@ object_key_state:
 	}
 
 object_continue:
-	i, idx, c = UPDATE_CHAR(buf, pj, i)
+	if done, i, idx, c = UPDATE_CHAR_V3(buf, pj, i, &indexes, &maskIndex, &indicesLen); done {
+		goto succeed
+	}
 	switch c {
 	case ',':
-		i, idx, c = UPDATE_CHAR(buf, pj, i)
+		if done, i, idx, c = UPDATE_CHAR_V3(buf, pj, i, &indexes, &maskIndex, &indicesLen); done {
+			goto succeed
+		}
 		if c != '"' {
 			goto fail
 		}
@@ -331,7 +373,9 @@ scope_end:
 
 	////////////////////////////// ARRAY STATES /////////////////////////////
 array_begin:
-	i, idx, c = UPDATE_CHAR(buf, pj, i)
+	if done, i, idx, c = UPDATE_CHAR_V3(buf, pj, i, &indexes, &maskIndex, &indicesLen); done {
+		goto succeed
+	}
 	if c == ']' {
 		goto scope_end // could also go to array_continue
 	}
@@ -391,10 +435,14 @@ main_array_switch:
 	}
 
 array_continue:
-	i, idx, c = UPDATE_CHAR(buf, pj, i)
+	if done, i, idx, c = UPDATE_CHAR_V3(buf, pj, i, &indexes, &maskIndex, &indicesLen); done {
+		goto succeed
+	}
 	switch c {
 	case ',':
-		i, idx, c = UPDATE_CHAR(buf, pj, i)
+		if done, i, idx, c = UPDATE_CHAR_V3(buf, pj, i, &indexes, &maskIndex, &indicesLen); done {
+			goto succeed
+		}
 		goto main_array_switch
 
 	case ']':

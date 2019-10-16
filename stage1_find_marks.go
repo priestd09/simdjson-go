@@ -66,6 +66,8 @@ func find_structural_indices(buf []byte, pj *internalParsedJson) bool {
 			&prev_iter_inside_quote, &error_mask,
 			structurals,
 			&prev_iter_ends_pseudo_pred)
+
+		pj.masks = append(pj.masks, structurals)
 	}
 
 	////////////////
@@ -93,11 +95,16 @@ func find_structural_indices(buf []byte, pj *internalParsedJson) bool {
 			structurals,
 			&prev_iter_ends_pseudo_pred)
 
+		pj.masks = append(pj.masks, structurals)
+
 		idx += 64
 	}
 
+// TODO: EXTRA RECORD CAUSES TestGscoDev TO CRASH
+
 	// finally, flatten out the remaining structurals from the last iteration
 	flatten_bits(&pj.structural_indexes, uint64(idx), structurals)
+	pj.masks = append(pj.masks, structurals)
 
 	// a valid JSON file cannot have zero structural indexes - we should have found something
 	if len(pj.structural_indexes) == 0 {
