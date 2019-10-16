@@ -67,7 +67,7 @@ func find_structural_indices(buf []byte, pj *internalParsedJson) bool {
 			structurals,
 			&prev_iter_ends_pseudo_pred)
 
-		pj.masks = append(pj.masks, structurals)
+		pj.masks_chan <- structurals
 	}
 
 	////////////////
@@ -95,7 +95,7 @@ func find_structural_indices(buf []byte, pj *internalParsedJson) bool {
 			structurals,
 			&prev_iter_ends_pseudo_pred)
 
-		pj.masks = append(pj.masks, structurals)
+		pj.masks_chan <- structurals
 
 		idx += 64
 	}
@@ -104,12 +104,14 @@ func find_structural_indices(buf []byte, pj *internalParsedJson) bool {
 
 	// finally, flatten out the remaining structurals from the last iteration
 	// flatten_bits(&pj.structural_indexes, uint64(idx), structurals)
-	pj.masks = append(pj.masks, structurals)
+	// pj.masks_chan <- structurals
+
+	close(pj.masks_chan)
 
 	// a valid JSON file cannot have zero structural indexes - we should have found something
-	if len(pj.masks) == 0 {
-		return false
-	}
+	//if len(pj.masks) == 0 {
+	//	return false
+	//}
 
 	//if uint32(len(buf)) != pj.structural_indexes[len(pj.structural_indexes)-1] {
 	//	// the string might not be NULL terminated, but we add a virtual NULL ending character.

@@ -22,7 +22,7 @@ type internalParsedJson struct {
 	ParsedJson
 	containing_scope_offset []uint64
 	isvalid                 bool
-	masks				    []uint64
+	masks_chan              chan uint64
 }
 
 func (pj *internalParsedJson) initialize(size int) {
@@ -31,7 +31,6 @@ func (pj *internalParsedJson) initialize(size int) {
 	pj.Strings = make([]byte, 0, size)
 
 	pj.containing_scope_offset = make([]uint64, 0, DEFAULTMAXDEPTH)
-	pj.masks = make([]uint64, 0, (size+63) >> 6)
 }
 
 // Iter returns a new Iter

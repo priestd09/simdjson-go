@@ -10,25 +10,19 @@ const RET_ADDRESS_START_CONST = 1
 const RET_ADDRESS_OBJECT_CONST = 2
 const RET_ADDRESS_ARRAY_CONST = 3
 
-//func UPDATE_CHAR(buf []byte, pj *internalParsedJson, i_in uint32) (i uint32, idx uint32, c byte) {
-//	idx = pj.structural_indexes[i_in]
-//	i = i_in + 1
-//	c = buf[idx]
-//	return
-//}
-
 // TODO: Change uint32 to uint64
 func UPDATE_CHAR_V3(buf []byte, pj *internalParsedJson, i_in uint32, indexes *[64]uint32, maskIndex *int, indicesLen *uint32) (done bool, i uint32, idx uint32, c byte) {
 	if uint32(i_in) >= *indicesLen /*len(*indexes)*/ {
 		for {
+			mask, ok := <- pj.masks_chan
 			//*indexes = (*indexes)[:0]
-			if *maskIndex >= len(pj.masks) {
+			if !ok { // *maskIndex >= len(pj.masks) {
 				done = true
 				return
 			}
 			// fmt.Printf("flatten_bits: 0b%b\n", pj.masks[*maskIndex])
 			//flatten_bits(indexes, 64 + uint64((*maskIndex)*64), pj.masks[*maskIndex])
-			*indicesLen = flatten_bits2(indexes, 64 + uint64((*maskIndex)*64), pj.masks[*maskIndex])
+			*indicesLen = flatten_bits2(indexes, 64 + uint64((*maskIndex)*64), mask)
 			*maskIndex += 1
 			i_in = 0
 			if *indicesLen /*len(*indexes)*/ > 0 {

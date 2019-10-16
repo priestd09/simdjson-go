@@ -48,24 +48,40 @@ func testStage2Dev(t *testing.T, filename string) {
 	pj := internalParsedJson{}
 	pj.initialize(len(msg)*2)
 
-	find_structural_indices(msg, &pj)
+	pj.masks_chan = make(chan uint64, 1024)
 
-	var done bool
-	i := uint32(0)     // index of the structural character (0,1,2,3...)
-	idx := uint32(0)   // location of the structural character in the input (buf)
-	c := byte(0)       // used to track the (structural) character we are looking at
+	var wg sync.WaitGroup
+	wg.Add(2)
 
-	indexes := [64]uint32{} // make([]uint32, 0, 64)
-	maskIndex := 0
-	indexesLen := uint32(0)
+	go func() {
+		find_structural_indices(msg, &pj)
+		wg.Done()
+	}()
 
-	for j := 0; j < 200000000; j++ {
-		done, i, idx, c = UPDATE_CHAR_V3(msg, &pj, i, &indexes, &maskIndex, &indexesLen)
-		fmt.Println(done, i, idx, string(c))
-		if done {
-			break
+	go func() {
+
+		var done bool
+		i := uint32(0)     // index of the structural character (0,1,2,3...)
+		idx := uint32(0)   // location of the structural character in the input (buf)
+		c := byte(0)       // used to track the (structural) character we are looking at
+
+		indexes := [64]uint32{} // make([]uint32, 0, 64)
+		maskIndex := 0
+		indexesLen := uint32(0)
+
+		for {
+
+			done, i, idx, c = UPDATE_CHAR_V3(msg, &pj, i, &indexes, &maskIndex, &indexesLen)
+			fmt.Println(done, i, idx, string(c))
+			if done {
+				break
+			}
 		}
-	}
+
+		wg.Done()
+	}()
+
+	wg.Wait()
 }
 
 func TestGscoDev(t *testing.T) { testStage2Dev(t, "gsoc-2018") }
@@ -81,11 +97,6 @@ func benchmarkStage2Dev(b *testing.B, filename string) {
 	pj := internalParsedJson{}
 	pj.initialize(len(msg)*2)
 
-	pj2 := internalParsedJson{}
-	pj2.initialize(len(msg)*2)
-
-	find_structural_indices(msg, &pj)
-
 	// buf := make([]byte, len(pj.masks)*8)
 	// for i, m := range pj.masks {
 	// 	binary.LittleEndian.PutUint64(buf[i*8:], m)
@@ -97,10 +108,10 @@ func benchmarkStage2Dev(b *testing.B, filename string) {
 		var wg sync.WaitGroup
 		wg.Add(2)
 
+		pj.masks_chan = make(chan uint64, 1024*1024)
+
 		go func() {
-//			pj2.structural_indexes = pj2.structural_indexes[:0]
-			pj2.masks = pj2.masks[:0]
-			find_structural_indices(msg, &pj2)
+			find_structural_indices(msg, &pj)
 			wg.Done()
 		}()
 
