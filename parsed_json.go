@@ -20,7 +20,6 @@ type ParsedJson struct {
 
 type internalParsedJson struct {
 	ParsedJson
-	structural_indexes      []uint32
 	containing_scope_offset []uint64
 	isvalid                 bool
 	masks				    []uint64
@@ -30,7 +29,6 @@ func (pj *internalParsedJson) initialize(size int) {
 	pj.Tape = make([]uint64, 0, size)
 	// FIXME(fwessel): Why are string size the same as element size?
 	pj.Strings = make([]byte, 0, size)
-	pj.structural_indexes = make([]uint32, 0, size)
 
 	pj.containing_scope_offset = make([]uint64, 0, DEFAULTMAXDEPTH)
 	pj.masks = make([]uint64, 0, (size+63) >> 6)

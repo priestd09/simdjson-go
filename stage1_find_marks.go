@@ -59,7 +59,7 @@ func find_structural_indices(buf []byte, pj *internalParsedJson) bool {
 		// #endif
 
 		// take the previous iterations structural bits, not our current iteration, and flatten
-		flatten_bits(&pj.structural_indexes, uint64(idx), structurals)
+		// flatten_bits(&pj.structural_indexes, uint64(idx), structurals)
 
 		// find structural bits
 		structurals = find_structural_bits(buf[idx:], &prev_iter_ends_odd_backslash,
@@ -87,7 +87,7 @@ func find_structural_indices(buf []byte, pj *internalParsedJson) bool {
 		// #endif
 
 		// take the previous iterations structural bits, not our current iteration, and flatten
-		flatten_bits(&pj.structural_indexes, uint64(idx), structurals)
+		// flatten_bits(&pj.structural_indexes, uint64(idx), structurals)
 
 		// find structural bits
 		structurals = find_structural_bits(tmpbuf[:], &prev_iter_ends_odd_backslash,
@@ -103,21 +103,21 @@ func find_structural_indices(buf []byte, pj *internalParsedJson) bool {
 // TODO: EXTRA RECORD CAUSES TestGscoDev TO CRASH
 
 	// finally, flatten out the remaining structurals from the last iteration
-	flatten_bits(&pj.structural_indexes, uint64(idx), structurals)
+	// flatten_bits(&pj.structural_indexes, uint64(idx), structurals)
 	pj.masks = append(pj.masks, structurals)
 
 	// a valid JSON file cannot have zero structural indexes - we should have found something
-	if len(pj.structural_indexes) == 0 {
+	if len(pj.masks) == 0 {
 		return false
 	}
 
-	if uint32(len(buf)) != pj.structural_indexes[len(pj.structural_indexes)-1] {
-		// the string might not be NULL terminated, but we add a virtual NULL ending character.
-		pj.structural_indexes = append(pj.structural_indexes, uint32(len(buf)))
-	}
-
-	// make it safe to dereference one beyond this array
-	pj.structural_indexes = append(pj.structural_indexes, 0)
+	//if uint32(len(buf)) != pj.structural_indexes[len(pj.structural_indexes)-1] {
+	//	// the string might not be NULL terminated, but we add a virtual NULL ending character.
+	//	pj.structural_indexes = append(pj.structural_indexes, uint32(len(buf)))
+	//}
+	//
+	//// make it safe to dereference one beyond this array
+	//pj.structural_indexes = append(pj.structural_indexes, 0)
 
 	if error_mask != 0 {
 		return false

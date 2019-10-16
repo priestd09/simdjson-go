@@ -89,72 +89,72 @@ func TestStage1FindMarks(t *testing.T) {
 	}
 }
 
-func TestFindStructuralIndices(t *testing.T) {
-
-	parsed := []string{
-		`{"Image":{"Width":800,"Height":600,"Title":"View from 15th Floor","Thumbnail":{"Url":"http://www.example.com/image/481989943","Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
-		` "Image":{"Width":800,"Height":600,"Title":"View from 15th Floor","Thumbnail":{"Url":"http://www.example.com/image/481989943","Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
-		`        :{"Width":800,"Height":600,"Title":"View from 15th Floor","Thumbnail":{"Url":"http://www.example.com/image/481989943","Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
-		`         {"Width":800,"Height":600,"Title":"View from 15th Floor","Thumbnail":{"Url":"http://www.example.com/image/481989943","Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
-		`          "Width":800,"Height":600,"Title":"View from 15th Floor","Thumbnail":{"Url":"http://www.example.com/image/481989943","Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
-		`                 :800,"Height":600,"Title":"View from 15th Floor","Thumbnail":{"Url":"http://www.example.com/image/481989943","Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
-		`                  800,"Height":600,"Title":"View from 15th Floor","Thumbnail":{"Url":"http://www.example.com/image/481989943","Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
-		`                     ,"Height":600,"Title":"View from 15th Floor","Thumbnail":{"Url":"http://www.example.com/image/481989943","Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
-		`                      "Height":600,"Title":"View from 15th Floor","Thumbnail":{"Url":"http://www.example.com/image/481989943","Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
-		`                              :600,"Title":"View from 15th Floor","Thumbnail":{"Url":"http://www.example.com/image/481989943","Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
-		`                               600,"Title":"View from 15th Floor","Thumbnail":{"Url":"http://www.example.com/image/481989943","Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
-		`                                  ,"Title":"View from 15th Floor","Thumbnail":{"Url":"http://www.example.com/image/481989943","Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
-		`                                   "Title":"View from 15th Floor","Thumbnail":{"Url":"http://www.example.com/image/481989943","Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
-		`                                          :"View from 15th Floor","Thumbnail":{"Url":"http://www.example.com/image/481989943","Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
-		`                                           "View from 15th Floor","Thumbnail":{"Url":"http://www.example.com/image/481989943","Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
-		`                                                                 ,"Thumbnail":{"Url":"http://www.example.com/image/481989943","Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
-		`                                                                  "Thumbnail":{"Url":"http://www.example.com/image/481989943","Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
-		`                                                                             :{"Url":"http://www.example.com/image/481989943","Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
-		`                                                                              {"Url":"http://www.example.com/image/481989943","Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
-		`                                                                               "Url":"http://www.example.com/image/481989943","Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
-		`                                                                                    :"http://www.example.com/image/481989943","Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
-		`                                                                                     "http://www.example.com/image/481989943","Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
-		`                                                                                                                             ,"Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
-		`                                                                                                                              "Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
-		`                                                                                                                                      :125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
-		`                                                                                                                                       125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
-		`                                                                                                                                          ,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
-		`                                                                                                                                           "Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
-		`                                                                                                                                                  :100},"Animated":false,"IDs":[116,943,234,38793]}}`,
-		`                                                                                                                                                   100},"Animated":false,"IDs":[116,943,234,38793]}}`,
-		`                                                                                                                                                      },"Animated":false,"IDs":[116,943,234,38793]}}`,
-		`                                                                                                                                                       ,"Animated":false,"IDs":[116,943,234,38793]}}`,
-		`                                                                                                                                                        "Animated":false,"IDs":[116,943,234,38793]}}`,
-		`                                                                                                                                                                  :false,"IDs":[116,943,234,38793]}}`,
-		`                                                                                                                                                                   false,"IDs":[116,943,234,38793]}}`,
-		`                                                                                                                                                                        ,"IDs":[116,943,234,38793]}}`,
-		`                                                                                                                                                                         "IDs":[116,943,234,38793]}}`,
-		`                                                                                                                                                                              :[116,943,234,38793]}}`,
-		`                                                                                                                                                                               [116,943,234,38793]}}`,
-		`                                                                                                                                                                                116,943,234,38793]}}`,
-		`                                                                                                                                                                                   ,943,234,38793]}}`,
-		`                                                                                                                                                                                    943,234,38793]}}`,
-		`                                                                                                                                                                                       ,234,38793]}}`,
-		`                                                                                                                                                                                        234,38793]}}`,
-		`                                                                                                                                                                                           ,38793]}}`,
-		`                                                                                                                                                                                            38793]}}`,
-		`                                                                                                                                                                                                 ]}}`,
-		`                                                                                                                                                                                                  }}`,
-		`                                                                                                                                                                                                   }`,
-		`                                                                                                                                                                                                    `,
-		`{"Image":{"Width":800,"Height":600,"Title":"View from 15th Floor","Thumbnail":{"Url":"http://www.example.com/image/481989943","Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
-	}
-
-	pj := internalParsedJson{}
-	pj.structural_indexes = make([]uint32, 0, 1024)
-
-	find_structural_indices([]byte(demo_json), &pj)
-
-	for i, pos := range pj.structural_indexes {
-		result := fmt.Sprintf("%s%s", strings.Repeat(" ", int(pos)), demo_json[pos:])
-		//fmt.Printf("`%s`,\n", result)
-		if result != parsed[i] {
-			t.Errorf("TestFindStructuralBits: got: %s want: %s", result, parsed[i])
-		}
-	}
-}
+//func TestFindStructuralIndices(t *testing.T) {
+//
+//	parsed := []string{
+//		`{"Image":{"Width":800,"Height":600,"Title":"View from 15th Floor","Thumbnail":{"Url":"http://www.example.com/image/481989943","Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
+//		` "Image":{"Width":800,"Height":600,"Title":"View from 15th Floor","Thumbnail":{"Url":"http://www.example.com/image/481989943","Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
+//		`        :{"Width":800,"Height":600,"Title":"View from 15th Floor","Thumbnail":{"Url":"http://www.example.com/image/481989943","Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
+//		`         {"Width":800,"Height":600,"Title":"View from 15th Floor","Thumbnail":{"Url":"http://www.example.com/image/481989943","Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
+//		`          "Width":800,"Height":600,"Title":"View from 15th Floor","Thumbnail":{"Url":"http://www.example.com/image/481989943","Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
+//		`                 :800,"Height":600,"Title":"View from 15th Floor","Thumbnail":{"Url":"http://www.example.com/image/481989943","Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
+//		`                  800,"Height":600,"Title":"View from 15th Floor","Thumbnail":{"Url":"http://www.example.com/image/481989943","Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
+//		`                     ,"Height":600,"Title":"View from 15th Floor","Thumbnail":{"Url":"http://www.example.com/image/481989943","Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
+//		`                      "Height":600,"Title":"View from 15th Floor","Thumbnail":{"Url":"http://www.example.com/image/481989943","Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
+//		`                              :600,"Title":"View from 15th Floor","Thumbnail":{"Url":"http://www.example.com/image/481989943","Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
+//		`                               600,"Title":"View from 15th Floor","Thumbnail":{"Url":"http://www.example.com/image/481989943","Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
+//		`                                  ,"Title":"View from 15th Floor","Thumbnail":{"Url":"http://www.example.com/image/481989943","Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
+//		`                                   "Title":"View from 15th Floor","Thumbnail":{"Url":"http://www.example.com/image/481989943","Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
+//		`                                          :"View from 15th Floor","Thumbnail":{"Url":"http://www.example.com/image/481989943","Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
+//		`                                           "View from 15th Floor","Thumbnail":{"Url":"http://www.example.com/image/481989943","Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
+//		`                                                                 ,"Thumbnail":{"Url":"http://www.example.com/image/481989943","Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
+//		`                                                                  "Thumbnail":{"Url":"http://www.example.com/image/481989943","Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
+//		`                                                                             :{"Url":"http://www.example.com/image/481989943","Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
+//		`                                                                              {"Url":"http://www.example.com/image/481989943","Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
+//		`                                                                               "Url":"http://www.example.com/image/481989943","Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
+//		`                                                                                    :"http://www.example.com/image/481989943","Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
+//		`                                                                                     "http://www.example.com/image/481989943","Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
+//		`                                                                                                                             ,"Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
+//		`                                                                                                                              "Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
+//		`                                                                                                                                      :125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
+//		`                                                                                                                                       125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
+//		`                                                                                                                                          ,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
+//		`                                                                                                                                           "Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
+//		`                                                                                                                                                  :100},"Animated":false,"IDs":[116,943,234,38793]}}`,
+//		`                                                                                                                                                   100},"Animated":false,"IDs":[116,943,234,38793]}}`,
+//		`                                                                                                                                                      },"Animated":false,"IDs":[116,943,234,38793]}}`,
+//		`                                                                                                                                                       ,"Animated":false,"IDs":[116,943,234,38793]}}`,
+//		`                                                                                                                                                        "Animated":false,"IDs":[116,943,234,38793]}}`,
+//		`                                                                                                                                                                  :false,"IDs":[116,943,234,38793]}}`,
+//		`                                                                                                                                                                   false,"IDs":[116,943,234,38793]}}`,
+//		`                                                                                                                                                                        ,"IDs":[116,943,234,38793]}}`,
+//		`                                                                                                                                                                         "IDs":[116,943,234,38793]}}`,
+//		`                                                                                                                                                                              :[116,943,234,38793]}}`,
+//		`                                                                                                                                                                               [116,943,234,38793]}}`,
+//		`                                                                                                                                                                                116,943,234,38793]}}`,
+//		`                                                                                                                                                                                   ,943,234,38793]}}`,
+//		`                                                                                                                                                                                    943,234,38793]}}`,
+//		`                                                                                                                                                                                       ,234,38793]}}`,
+//		`                                                                                                                                                                                        234,38793]}}`,
+//		`                                                                                                                                                                                           ,38793]}}`,
+//		`                                                                                                                                                                                            38793]}}`,
+//		`                                                                                                                                                                                                 ]}}`,
+//		`                                                                                                                                                                                                  }}`,
+//		`                                                                                                                                                                                                   }`,
+//		`                                                                                                                                                                                                    `,
+//		`{"Image":{"Width":800,"Height":600,"Title":"View from 15th Floor","Thumbnail":{"Url":"http://www.example.com/image/481989943","Height":125,"Width":100},"Animated":false,"IDs":[116,943,234,38793]}}`,
+//	}
+//
+//	pj := internalParsedJson{}
+//	pj.structural_indexes = make([]uint32, 0, 1024)
+//
+//	find_structural_indices([]byte(demo_json), &pj)
+//
+//	for i, pos := range pj.structural_indexes {
+//		result := fmt.Sprintf("%s%s", strings.Repeat(" ", int(pos)), demo_json[pos:])
+//		//fmt.Printf("`%s`,\n", result)
+//		if result != parsed[i] {
+//			t.Errorf("TestFindStructuralBits: got: %s want: %s", result, parsed[i])
+//		}
+//	}
+//}

@@ -18,7 +18,7 @@ func benchmarkFromFile(b *testing.B, filename string) {
 	pj.initialize(len(msg) * 2)
 
 	for i := 0; i < b.N; i++ {
-		pj.structural_indexes = pj.structural_indexes[:0]
+//		pj.structural_indexes = pj.structural_indexes[:0]
 		pj.Tape = pj.Tape[:0]
 		pj.Strings = pj.Strings[:0]
 		find_structural_indices(msg, &pj)
@@ -98,7 +98,7 @@ func benchmarkStage2Dev(b *testing.B, filename string) {
 		wg.Add(2)
 
 		go func() {
-			pj2.structural_indexes = pj2.structural_indexes[:0]
+//			pj2.structural_indexes = pj2.structural_indexes[:0]
 			pj2.masks = pj2.masks[:0]
 			find_structural_indices(msg, &pj2)
 			wg.Done()

@@ -90,10 +90,10 @@ func is_valid_null_atom(buf []byte) bool {
 
 func unified_machine(buf []byte, pj *internalParsedJson) bool {
 
-	// TODO: Figure out why we may have a trailing zero as the last structural element
-	if pj.structural_indexes[len(pj.structural_indexes)-1] == 0 {
-		pj.structural_indexes = pj.structural_indexes[:len(pj.structural_indexes)-1]
-	}
+	//// TODO: Figure out why we may have a trailing zero as the last structural element
+	//if pj.structural_indexes[len(pj.structural_indexes)-1] == 0 {
+	//	pj.structural_indexes = pj.structural_indexes[:len(pj.structural_indexes)-1]
+	//}
 
 	var done bool
 	i := uint32(0)      // index of the structural character (0,1,2,3...)
@@ -243,11 +243,11 @@ func unified_machine(buf []byte, pj *internalParsedJson) bool {
 
 start_continue:
 	// the string might not be NULL terminated.
-	if i+1 == uint32(len(pj.structural_indexes)) {
-		goto succeed
-	} else {
+//	if i+1 == uint32(len(pj.structural_indexes)) {
+//		goto succeed
+//	} else {
 		goto fail
-	}
+//	}
 
 	//////////////////////////////// OBJECT STATES /////////////////////////////
 
