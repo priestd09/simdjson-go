@@ -18,12 +18,12 @@ type ParsedJson struct {
 	Strings []byte
 }
 
-const MASK_SIZE = 4096
+const MASK_SIZE = 512
 
 type maskChanStruct struct {
 	index  int
 	length int
-	masks  [MASK_SIZE]uint64
+	masks  *[MASK_SIZE]uint64
 }
 
 type internalParsedJson struct {

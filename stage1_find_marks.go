@@ -50,6 +50,7 @@ func find_structural_indices(buf []byte, pj *internalParsedJson) bool {
 	error_mask := uint64(0) // for unescaped characters within strings (ASCII code points < 0x20)
 
 	mask := maskChanStruct{}
+	mask.masks = &[MASK_SIZE]uint64{}
 
 	idx := uint64(0)
 	for ; idx < lenminus64; idx += 64 {
@@ -74,8 +75,9 @@ func find_structural_indices(buf []byte, pj *internalParsedJson) bool {
 			// fmt.Println("Sending masks", mask)
 			pj.masks_chan <- mask
 			mask = maskChanStruct{}
+			mask.masks = &[MASK_SIZE]uint64{}
 		}
-		mask.masks[mask.length] = structurals
+		(*mask.masks)[mask.length] = structurals
 		mask.length += 1
 	}
 
@@ -109,8 +111,9 @@ func find_structural_indices(buf []byte, pj *internalParsedJson) bool {
 			// fmt.Println("Sending masks", mask)
 			pj.masks_chan <- mask
 			mask = maskChanStruct{}
+			mask.masks = &[MASK_SIZE]uint64{}
 		}
-		mask.masks[mask.length] = structurals
+		(*mask.masks)[mask.length] = structurals
 		mask.length += 1
 
 		idx += 64

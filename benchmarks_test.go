@@ -121,12 +121,12 @@ func testStage2DevChannel(t *testing.T, filename string) {
 func TestGsocDevChannel(t *testing.T) { testStage2DevChannel(t, "gsoc-2018") }
 func TestTwitterDevChannel(t *testing.T) { testStage2DevChannel(t, "twitter") }
 
-func benchmarkStage2Dev(b *testing.B, filename string) {
+func benchmarkStage2Chan(b *testing.B, filename string) {
 
 	_, _, msg := loadCompressed(b, filename)
 
 	b.SetBytes(int64(len(msg)))
-	b.ReportAllocs()
+//	b.ReportAllocs()
 	b.ResetTimer()
 
 	pj := internalParsedJson{}
@@ -165,7 +165,36 @@ func benchmarkStage2Dev(b *testing.B, filename string) {
 // BenchmarkGsocDev-8          2000            930941 ns/op        3574.69 MB/s       43270 B/op          0 allocs/op
 // BenchmarkGsocDev-8          2000            961418 ns/op        3461.38 MB/s       43270 B/op          0 allocs/op
 
-func BenchmarkApacheDev(b *testing.B) { benchmarkStage2Dev(b, "apache_builds") }
-func BenchmarkCitm_catalogDev(b *testing.B) { benchmarkStage2Dev(b, "citm_catalog") }
-func BenchmarkGsocDev(b *testing.B) { benchmarkStage2Dev(b, "gsoc-2018") }
-func BenchmarkTwitterDev(b *testing.B) { benchmarkStage2Dev(b, "twitter") }
+
+
+func BenchmarkChanApache(b *testing.B) { benchmarkStage2Chan(b, "apache_builds") }
+func BenchmarkChanCanada(b *testing.B) { benchmarkStage2Chan(b, "canada") }
+func BenchmarkChanCitm_catalog(b *testing.B) { benchmarkStage2Chan(b, "citm_catalog") }
+func BenchmarkChanGithub_events(b *testing.B) { benchmarkStage2Chan(b, "github_events") }
+func BenchmarkChanGsoc_2018(b *testing.B) { benchmarkStage2Chan(b, "gsoc-2018") }
+func BenchmarkChanInstruments(b *testing.B) { benchmarkStage2Chan(b, "instruments") }
+func BenchmarkChanMarine_ik(b *testing.B) { benchmarkStage2Chan(b, "marine_ik") }
+func BenchmarkChanMesh(b *testing.B) { benchmarkStage2Chan(b, "mesh") }
+func BenchmarkChanMesh_pretty(b *testing.B) { benchmarkStage2Chan(b, "mesh.pretty") }
+func BenchmarkChanNumbers(b *testing.B) { benchmarkStage2Chan(b, "numbers") }
+func BenchmarkChanRandom(b *testing.B) { benchmarkStage2Chan(b, "random") }
+func BenchmarkChanTwitter(b *testing.B) { benchmarkStage2Chan(b, "twitter") }
+func BenchmarkChanTwitterescaped(b *testing.B) { benchmarkStage2Chan(b, "twitterescaped") }
+func BenchmarkChanUpdate_center(b *testing.B) { benchmarkStage2Chan(b, "update-center") }
+
+$ benchcmp perf_sequential.txt perf_channel.txt
+
+benchmark                         old MB/s     new MB/s     speedup
+BenchmarkChanCanada-8             487.78       368.64       0.76x
+BenchmarkChanCitm_catalog-8       1052.45      922.32       0.88x
+BenchmarkChanGithub_events-8      952.18       632.94       0.66x
+BenchmarkChanGsoc_2018-8          1433.23      2045.31      1.43x
+BenchmarkChanInstruments-8        721.00       494.90       0.69x
+BenchmarkChanMarine_ik-8          412.00       293.70       0.71x
+BenchmarkChanMesh-8               374.55       280.89       0.75x
+BenchmarkChanMesh_pretty-8        633.40       544.89       0.86x
+BenchmarkChanNumbers-8            438.47       322.24       0.73x
+BenchmarkChanRandom-8             558.90       411.58       0.74x
+BenchmarkChanTwitter-8            901.07       697.33       0.77x
+BenchmarkChanTwitterescaped-8     627.44       513.67       0.82x
+BenchmarkChanUpdate_center-8      706.68       557.89       0.79x
