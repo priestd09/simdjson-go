@@ -49,6 +49,8 @@ func find_structural_indices(buf []byte, pj *internalParsedJson) bool {
 
 	error_mask := uint64(0) // for unescaped characters within strings (ASCII code points < 0x20)
 
+	mask := maskChanStruct{}
+
 	idx := uint64(0)
 	for ; idx < lenminus64; idx += 64 {
 
@@ -67,7 +69,14 @@ func find_structural_indices(buf []byte, pj *internalParsedJson) bool {
 			structurals,
 			&prev_iter_ends_pseudo_pred)
 
-		pj.masks_chan <- structurals
+		// If masks array full, send masks and create new array
+		if mask.length >= MASK_SIZE {
+			// fmt.Println("Sending masks", mask)
+			pj.masks_chan <- mask
+			mask = maskChanStruct{}
+		}
+		mask.masks[mask.length] = structurals
+		mask.length += 1
 	}
 
 	////////////////
@@ -95,7 +104,14 @@ func find_structural_indices(buf []byte, pj *internalParsedJson) bool {
 			structurals,
 			&prev_iter_ends_pseudo_pred)
 
-		pj.masks_chan <- structurals
+		// If masks array full, send masks and create new array
+		if mask.length >= MASK_SIZE {
+			// fmt.Println("Sending masks", mask)
+			pj.masks_chan <- mask
+			mask = maskChanStruct{}
+		}
+		mask.masks[mask.length] = structurals
+		mask.length += 1
 
 		idx += 64
 	}
@@ -106,6 +122,10 @@ func find_structural_indices(buf []byte, pj *internalParsedJson) bool {
 	// flatten_bits(&pj.structural_indexes, uint64(idx), structurals)
 	// pj.masks_chan <- structurals
 
+	// Send (any) last masks
+	if mask.length > 0 {
+		pj.masks_chan <- mask
+	}
 	close(pj.masks_chan)
 
 	// a valid JSON file cannot have zero structural indexes - we should have found something

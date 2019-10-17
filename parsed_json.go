@@ -18,11 +18,19 @@ type ParsedJson struct {
 	Strings []byte
 }
 
+const MASK_SIZE = 4096
+
+type maskChanStruct struct {
+	index  int
+	length int
+	masks  [MASK_SIZE]uint64
+}
+
 type internalParsedJson struct {
 	ParsedJson
 	containing_scope_offset []uint64
 	isvalid                 bool
-	masks_chan              chan uint64
+	masks_chan              chan maskChanStruct
 }
 
 func (pj *internalParsedJson) initialize(size int) {

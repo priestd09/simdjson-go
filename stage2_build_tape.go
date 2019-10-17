@@ -1,6 +1,7 @@
 package simdjson
 
 import (
+	_ "fmt"
 	"encoding/binary"
 )
 
@@ -11,21 +12,31 @@ const RET_ADDRESS_OBJECT_CONST = 2
 const RET_ADDRESS_ARRAY_CONST = 3
 
 // TODO: Change uint32 to uint64
-func UPDATE_CHAR_V3(buf []byte, pj *internalParsedJson, i_in uint32, indexes *[64]uint32, maskIndex *int, indicesLen *uint32) (done bool, i uint32, idx uint32, c byte) {
+func UPDATE_CHAR_V3(buf []byte, pj *internalParsedJson, i_in uint32, indexes *[64]uint32, maskIndex *int, indicesLen *uint32, masks *maskChanStruct) (done bool, i uint32, idx uint32, c byte) {
 	if uint32(i_in) >= *indicesLen /*len(*indexes)*/ {
 		for {
-			mask, ok := <- pj.masks_chan
-			//*indexes = (*indexes)[:0]
-			if !ok { // *maskIndex >= len(pj.masks) {
-				done = true
-				return
+			if (*masks).length == 0 {
+				var ok bool
+				*masks, ok = <- pj.masks_chan
+				if !ok {
+					done = true
+					return
+				}
 			}
-			// fmt.Printf("flatten_bits: 0b%b\n", pj.masks[*maskIndex])
-			//flatten_bits(indexes, 64 + uint64((*maskIndex)*64), pj.masks[*maskIndex])
-			*indicesLen = flatten_bits2(indexes, 64 + uint64((*maskIndex)*64), mask)
+
+			if (*masks).masks[(*masks).index] != 0 {
+				*indicesLen = flatten_bits2(indexes, 64+uint64((*maskIndex)*64), (*masks).masks[(*masks).index])
+			} else {
+				*indicesLen = 0
+			}
 			*maskIndex += 1
+			(*masks).index += 1
+			if (*masks).index >= (*masks).length  {
+				(*masks).length = 0
+				(*masks).index = 0
+			}
 			i_in = 0
-			if *indicesLen /*len(*indexes)*/ > 0 {
+			if *indicesLen > 0 {
 				break
 			}
 		}
@@ -35,6 +46,7 @@ func UPDATE_CHAR_V3(buf []byte, pj *internalParsedJson, i_in uint32, indexes *[6
 	c = buf[idx]
 	return
 }
+
 
 func parse_string(buf []byte, pj *ParsedJson, depth int, offset uint32) bool {
 	pj.write_tape(uint64(len(pj.Strings)), '"')
@@ -98,6 +110,7 @@ func unified_machine(buf []byte, pj *internalParsedJson) bool {
 	indexes := [64]uint32{} // make([]uint32, 0, 64)
 	maskIndex := 0
 	indicesLen := uint32(0)
+	var masks maskChanStruct
 
 	//pj.init();
 
@@ -111,7 +124,7 @@ func unified_machine(buf []byte, pj *internalParsedJson) bool {
 	pj.write_tape(0, 'r') // r for root, 0 is going to get overwritten
 	// the root is used, if nothing else, to capture the size of the tape
 
-	if done, i, idx, c = UPDATE_CHAR_V3(buf, pj, i, &indexes, &maskIndex, &indicesLen); done {
+	if done, i, idx, c = UPDATE_CHAR_V3(buf, pj, i, &indexes, &maskIndex, &indicesLen, &masks); done {
 		goto succeed
 	}
 	switch c {
@@ -246,7 +259,7 @@ start_continue:
 	//////////////////////////////// OBJECT STATES /////////////////////////////
 
 object_begin:
-	if done, i, idx, c = UPDATE_CHAR_V3(buf, pj, i, &indexes, &maskIndex, &indicesLen); done {
+	if done, i, idx, c = UPDATE_CHAR_V3(buf, pj, i, &indexes, &maskIndex, &indicesLen, &masks); done {
 		goto succeed
 	}
 	switch c {
@@ -262,13 +275,13 @@ object_begin:
 	}
 
 object_key_state:
-	if done, i, idx, c = UPDATE_CHAR_V3(buf, pj, i, &indexes, &maskIndex, &indicesLen); done {
+	if done, i, idx, c = UPDATE_CHAR_V3(buf, pj, i, &indexes, &maskIndex, &indicesLen, &masks); done {
 		goto succeed
 	}
 	if c != ':' {
 		goto fail
 	}
-	if done, i, idx, c = UPDATE_CHAR_V3(buf, pj, i, &indexes, &maskIndex, &indicesLen); done {
+	if done, i, idx, c = UPDATE_CHAR_V3(buf, pj, i, &indexes, &maskIndex, &indicesLen, &masks); done {
 		goto succeed
 	}
 	switch c {
@@ -322,12 +335,12 @@ object_key_state:
 	}
 
 object_continue:
-	if done, i, idx, c = UPDATE_CHAR_V3(buf, pj, i, &indexes, &maskIndex, &indicesLen); done {
+	if done, i, idx, c = UPDATE_CHAR_V3(buf, pj, i, &indexes, &maskIndex, &indicesLen, &masks); done {
 		goto succeed
 	}
 	switch c {
 	case ',':
-		if done, i, idx, c = UPDATE_CHAR_V3(buf, pj, i, &indexes, &maskIndex, &indicesLen); done {
+		if done, i, idx, c = UPDATE_CHAR_V3(buf, pj, i, &indexes, &maskIndex, &indicesLen, &masks); done {
 			goto succeed
 		}
 		if c != '"' {
@@ -367,7 +380,7 @@ scope_end:
 
 	////////////////////////////// ARRAY STATES /////////////////////////////
 array_begin:
-	if done, i, idx, c = UPDATE_CHAR_V3(buf, pj, i, &indexes, &maskIndex, &indicesLen); done {
+	if done, i, idx, c = UPDATE_CHAR_V3(buf, pj, i, &indexes, &maskIndex, &indicesLen, &masks); done {
 		goto succeed
 	}
 	if c == ']' {
@@ -429,12 +442,12 @@ main_array_switch:
 	}
 
 array_continue:
-	if done, i, idx, c = UPDATE_CHAR_V3(buf, pj, i, &indexes, &maskIndex, &indicesLen); done {
+	if done, i, idx, c = UPDATE_CHAR_V3(buf, pj, i, &indexes, &maskIndex, &indicesLen, &masks); done {
 		goto succeed
 	}
 	switch c {
 	case ',':
-		if done, i, idx, c = UPDATE_CHAR_V3(buf, pj, i, &indexes, &maskIndex, &indicesLen); done {
+		if done, i, idx, c = UPDATE_CHAR_V3(buf, pj, i, &indexes, &maskIndex, &indicesLen, &masks); done {
 			goto succeed
 		}
 		goto main_array_switch

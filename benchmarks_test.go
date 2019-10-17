@@ -41,14 +41,16 @@ func BenchmarkTwitter(b *testing.B)        { benchmarkFromFile(b, "twitter") }
 func BenchmarkTwitterescaped(b *testing.B) { benchmarkFromFile(b, "twitterescaped") }
 func BenchmarkUpdate_center(b *testing.B)  { benchmarkFromFile(b, "update-center") }
 
-func testStage2Dev(t *testing.T, filename string) {
+func testStage2DevUpdateChar(t *testing.T, filename string) {
 
-	_, _, msg := loadCompressed(t, filename)
+	tape, _, msg := loadCompressed(t, filename)
+	fmt.Println("tape check original", len(tape)/8)
 
 	pj := internalParsedJson{}
 	pj.initialize(len(msg)*2)
 
-	pj.masks_chan = make(chan uint64, 1024)
+	// Let's make it synchronous for now ...
+	pj.masks_chan = make(chan maskChanStruct) // , 1024)
 
 	var wg sync.WaitGroup
 	wg.Add(2)
@@ -69,9 +71,10 @@ func testStage2Dev(t *testing.T, filename string) {
 		maskIndex := 0
 		indexesLen := uint32(0)
 
-		for {
+		var masks maskChanStruct
 
-			done, i, idx, c = UPDATE_CHAR_V3(msg, &pj, i, &indexes, &maskIndex, &indexesLen)
+		for {
+			done, i, idx, c = UPDATE_CHAR_V3(msg, &pj, i, &indexes, &maskIndex, &indexesLen, &masks)
 			fmt.Println(done, i, idx, string(c))
 			if done {
 				break
@@ -84,7 +87,39 @@ func testStage2Dev(t *testing.T, filename string) {
 	wg.Wait()
 }
 
-func TestGscoDev(t *testing.T) { testStage2Dev(t, "gsoc-2018") }
+func TestGsocDevUpdateChar(t *testing.T) { testStage2DevUpdateChar(t, "gsoc-2018") }
+
+func testStage2DevChannel(t *testing.T, filename string) {
+
+	tape, _, msg := loadCompressed(t, filename)
+	fmt.Println("tape check original", len(tape)/8)
+
+	pj := internalParsedJson{}
+	pj.initialize(len(msg)*2)
+
+	// Let's make it synchronous for now ...
+	pj.masks_chan = make(chan maskChanStruct) // , 1024)
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	go func() {
+		find_structural_indices(msg, &pj)
+		wg.Done()
+	}()
+
+	go func() {
+		unified_machine(msg, &pj)
+		wg.Done()
+	}()
+
+	wg.Wait()
+
+	fmt.Println(len(pj.Tape))
+}
+
+func TestGsocDevChannel(t *testing.T) { testStage2DevChannel(t, "gsoc-2018") }
+func TestTwitterDevChannel(t *testing.T) { testStage2DevChannel(t, "twitter") }
 
 func benchmarkStage2Dev(b *testing.B, filename string) {
 
@@ -108,7 +143,7 @@ func benchmarkStage2Dev(b *testing.B, filename string) {
 		var wg sync.WaitGroup
 		wg.Add(2)
 
-		pj.masks_chan = make(chan uint64, 1024*1024)
+		pj.masks_chan = make(chan maskChanStruct, 32) // , 1024)
 
 		go func() {
 			find_structural_indices(msg, &pj)
@@ -130,4 +165,7 @@ func benchmarkStage2Dev(b *testing.B, filename string) {
 // BenchmarkGsocDev-8          2000            930941 ns/op        3574.69 MB/s       43270 B/op          0 allocs/op
 // BenchmarkGsocDev-8          2000            961418 ns/op        3461.38 MB/s       43270 B/op          0 allocs/op
 
+func BenchmarkApacheDev(b *testing.B) { benchmarkStage2Dev(b, "apache_builds") }
+func BenchmarkCitm_catalogDev(b *testing.B) { benchmarkStage2Dev(b, "citm_catalog") }
 func BenchmarkGsocDev(b *testing.B) { benchmarkStage2Dev(b, "gsoc-2018") }
+func BenchmarkTwitterDev(b *testing.B) { benchmarkStage2Dev(b, "twitter") }
